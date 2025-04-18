@@ -1,13 +1,3 @@
-# WorkoutApp-Bolt
-Repository created by Bolt to GitHub extension
+clones wo-42 mostly working
 
-workout app that allows creating workouts, creating profiles, total weight lifted + calories = total score
-
-
-manifest.json is how to change app name
-
-dark mode works for ios
-
-UserRankings.tax needs this fix before it will load properly:
-
-workout_logs has column:completed_at but columns is_wod and scheduled_date are on table: workouts
+shortened workout logger but still not able to update scores.  can't use "scores" to tell AI to update input numbers (reps, weight, time).  Scores is identified as totals on a different supabase table
