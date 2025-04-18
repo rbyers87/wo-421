@@ -1,0 +1,84 @@
+/* Tailwind CSS Directives */
+    @tailwind base;
+    @tailwind components;
+    @tailwind utilities;
+
+    /* Inform iOS Safari and PWA of both light and dark modes */
+    :root {
+      color-scheme: light dark;
+    }
+
+    /* Dark mode fix for Safari PWA */
+    html, body {
+      background-color: #ffffff;
+      color: #000000;
+      min-height: 100%; /* Ensure the background covers the full viewport */
+    }
+
+    html.dark, body.dark {
+      background-color: #121212;
+      color: #ffffff;
+    }
+
+    /* Force background color in standalone PWA mode */
+    @media (display-mode: standalone) {
+      html, body {
+        background-color: #ffffff;
+      }
+      
+      html.dark, body.dark {
+        background-color: #121212;
+      }
+    }
+
+    /* Ensure all containers adapt to dark mode */
+    .container {
+      background-color: inherit;
+      color: inherit;
+    }
+
+    /* Media queries for container padding */
+    @media (max-width: 768px) {
+      .container {
+        padding-left: 1rem;
+        padding-right: 1rem;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .container {
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
+      }
+    }
+
+    .ranking-item {
+      display: flex;
+      align-items: center; /* Align items vertically */
+      justify-content: space-between;
+      padding: 12px;
+      border-bottom: 1px solid #e2e8f0; /* Add a subtle border */
+    }
+
+    .ranking-item:last-child {
+      border-bottom: none; /* Remove border from the last item */
+    }
+
+    .ranking-item .flex {
+      flex: 1; /* Allow the profile info to take up available space */
+    }
+
+    .like-button {
+      background: none;
+      border: none;
+      padding: 0;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      color: #6b7280; /* Adjust color as needed */
+    }
+
+    .like-button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }

@@ -1,0 +1,7 @@
+VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFxeWN6ZmFpYW94cmR2amprZ2Z6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzU3NTg3ODMsImV4cCI6MjA1MTMzNDc4M30.tFCj-ZvPZ729yYF66k7OZwIwsfl1NEpCLuYKmAZYVD8
+    VITE_SUPABASE_URL=https://qqyczfaiaoxrdvjjkgfz.supabase.co
+    VITE_CLOUDINARY_CLOUD_NAME=dgl9bhz5w
+    VITE_CLOUDINARY_API_KEY=548192874582437
+    VITE_CLOUDINARY_API_SECRET=ukX65Bcbg_inuSyur332AV4Mqdg
+    # Replace with your actual Cloudinary upload preset name, and ensure the preset is configured to use the 'workout-app-images' folder
+    VITE_CLOUDINARY_UPLOAD_PRESET=ml_default
