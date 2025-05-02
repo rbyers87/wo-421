@@ -6,7 +6,6 @@ import type { Workout, WorkoutExercise, ExerciseScore } from '../../types/workou
 import { format, startOfWeek, endOfWeek } from 'date-fns';
 import { Trash2 } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
-import { useWorkoutLogger } from '../../hooks/useWorkoutLogger';
 
 interface WorkoutLoggerProps {
   workout: Workout;
@@ -35,7 +34,6 @@ export function WorkoutLogger({ workout, onClose, previousLogs, workoutLogId: in
   const [saving, setSaving] = useState(false);
   const [workoutLogId, setWorkoutLogId] = useState<string | null>(initialWorkoutLogId);
   const [existingScores, setExistingScores] = useState<ExerciseScore[]>([]);
-	const { logWorkout, updateWorkoutLog } = useWorkoutLogger();
 
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -224,72 +222,208 @@ export function WorkoutLogger({ workout, onClose, previousLogs, workoutLogId: in
     onClose(); // Close the modal without saving changes
   };
 
-// Then replace your handleSubmit function with this simpler version
-const handleSubmit = async () => {
-  if (!user) {
-    alert('User is not logged in.');
-    return;
-  }
+  const handleSubmit = async () => {
+    if (!user) {
+      alert('User is not logged in.');
+      return;
+    }
 
-  try {
     setSaving(true);
-    
-    if (workoutLogId) {
-      // Update existing workout
-      await updateWorkoutLog(workoutLogId, workout, logs, notes);
-    } else {
-      // Create new workout log
-      await logWorkout(workout, logs, notes);
-    }
-    
-    // Get completed exercises for the week
-    if (user) {
-      const weekStart = format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
-      const weekEnd = format(endOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
 
-      const { data: completedData, error: completedError } = await supabase
-        .from('workout_logs')
-        .select(`
-          completed_at,
-          workout:workouts!inner (
-            workout_exercises!inner (
-              exercise_id
+    try {
+      // Calculate the total score and total for the workout
+      const score = logs.reduce((total, log, index) => {
+        const exercise = workout.workout_exercises?.[index];
+        return total + (exercise ? calculateScore(exercise, log, workout.type) : 0);
+      }, 0);
+
+      const total = logs.reduce((total, log, index) => {
+        const exercise = workout.workout_exercises?.[index];
+        return total + (exercise ? calculateTotal(exercise, log) : 0);
+      }, 0);
+
+      // Define a variable to hold the current workout log ID
+      let currentWorkoutLogId = workoutLogId;
+
+      // Check if we're updating an existing workout log or creating a new one
+      if (currentWorkoutLogId) {
+        // Update existing workout log
+        const { data, error: updateError } = await supabase
+          .from('workout_logs')
+          .update({
+            notes,
+            score,
+            total,
+            completed_at: new Date().toISOString(),
+          })
+          .eq('id', currentWorkoutLogId)
+          .select()
+          .maybeSingle();
+
+        if (updateError) {
+          console.error('Error updating workout log:', updateError);
+          throw updateError;
+        }
+
+        if (!data) {
+          console.warn('No workout log found with that ID to update.');
+          // Instead of throwing an error, we'll create a new workout log
+          const { data: newData, error: createError } = await supabase
+            .from('workout_logs')
+            .insert({
+              user_id: user.id,
+              workout_id: workout.id,
+              notes,
+              completed_at: new Date().toISOString(),
+              score,
+              total,
+            })
+            .select()
+            .maybeSingle();
+
+          if (createError) {
+            console.error('Error creating workout log after failed update:', createError);
+            throw createError;
+          }
+
+          if (!newData) {
+            console.error('Failed to create new workout log after failed update');
+            throw new Error('Failed to create or update workout log');
+          }
+
+          // Update to use the newly created workout log ID
+          currentWorkoutLogId = newData.id;
+          setWorkoutLogId(currentWorkoutLogId);
+        }
+        // We don't need to update currentWorkoutLogId if the update succeeded
+      } else {
+        // Create new workout log
+        const { data, error: workoutError } = await supabase
+          .from('workout_logs')
+          .insert({
+            user_id: user.id,
+            workout_id: workout.id,
+            notes,
+            completed_at: new Date().toISOString(),
+            score,
+            total,
+          })
+          .select()
+          .maybeSingle();
+
+        if (workoutError) {
+          console.error('Error creating workout log:', workoutError);
+          throw workoutError;
+        }
+
+        if (!data) {
+          console.warn('Workout log creation returned no data.');
+          throw new Error('Failed to create workout log');
+        }
+
+        // Update the current workout log ID with the new one
+        currentWorkoutLogId = data.id;
+        setWorkoutLogId(currentWorkoutLogId);
+      }
+
+      // Make sure we have a valid workout log ID at this point
+      if (!currentWorkoutLogId) {
+        throw new Error('Missing workout log ID');
+      }
+
+      // Prepare exercise scores for upsert
+      const exerciseScoresToUpsert = logs.flatMap((log, index) => {
+        const exercise = workout.workout_exercises?.[index];
+        if (!exercise) return [];
+        return log.sets.map((set) => {
+          return {
+            id: set.id || uuidv4(),
+            user_id: user.id,
+            workout_log_id: currentWorkoutLogId, // Use the current workout log ID
+            exercise_id: log.exercise_id,
+            weight: set.weight,
+            reps: set.reps,
+            distance: set.distance,
+            time: set.time,
+            calories: set.calories,
+          };
+        });
+      });
+
+      // Upsert exercise scores
+      const { error: upsertError } = await supabase
+        .from('exercise_scores')
+        .upsert(exerciseScoresToUpsert, { onConflict: 'id' });
+
+      if (upsertError) {
+        console.error('Error upserting exercise scores:', upsertError);
+        throw upsertError;
+      }
+
+      // Handle deleted sets
+      if (currentWorkoutLogId) {
+        const existingScoreIds = existingScores.map(es => es.id);
+        const currentScoreIds = exerciseScoresToUpsert.map(es => es.id).filter(id => id);
+        const scoresToDelete = existingScoreIds.filter(id => !currentScoreIds.includes(id));
+
+        if (scoresToDelete.length > 0) {
+          const { error: deleteError } = await supabase
+            .from('exercise_scores')
+            .delete()
+            .in('id', scoresToDelete);
+
+          if (deleteError) throw deleteError;
+        }
+      }
+
+      // Get completed exercises for the week in the format WeeklyExercises expects
+      if (user) {
+        const weekStart = format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
+        const weekEnd = format(endOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
+
+        const { data: completedData, error: completedError } = await supabase
+          .from('workout_logs')
+          .select(`
+            completed_at,
+            workout:workouts!inner (
+              workout_exercises!inner (
+                exercise_id
+              )
             )
-          )
-        `)
-        .eq('user_id', user.id)
-        .gte('completed_at', weekStart)
-        .lte('completed_at', weekEnd);
+          `)
+          .eq('user_id', user.id)
+          .gte('completed_at', weekStart)
+          .lte('completed_at', weekEnd);
 
-      if (completedError) throw completedError;
+        if (completedError) throw completedError;
 
-      const formattedCompletedExercises = completedData?.flatMap(log =>
-        log.workout.workout_exercises.map(ex => ({
-          exercise_id: ex.exercise_id,
-          completed_at: log.completed_at,
-        }))
-      ) || [];
+        const formattedCompletedExercises = completedData?.flatMap(log =>
+          log.workout.workout_exercises.map(ex => ({
+            exercise_id: ex.exercise_id,
+            completed_at: log.completed_at,
+          }))
+        ) || [];
 
-      onClose(formattedCompletedExercises);
-    } else {
-      onClose();
+        onClose(formattedCompletedExercises);
+      } else {
+        onClose();
+      }
+
+      alert('Workout logged successfully!');
+    } catch (error) {
+      console.error('Error logging workout:', error);
+      alert(`Failed to log workout: ${error.message || 'Unknown error'}`);
+    } finally {
+      setSaving(false);
     }
-
-    alert('Workout logged successfully!');
-  } catch (error) {
-    console.error('Error logging workout:', error);
-    alert(`Failed to log workout: ${error.message || 'Unknown error'}`);
-  } finally {
-    setSaving(false);
-  }
-};
+  };
 
   return (
-        <div className="fixed inset-0 dark:bg-gray-800 bg-opacity-75 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 ai-style-change-1 dark:bg-gray-700 dark:text-gray-300 dark:shadow-gray-900">
-            <h2 className="text-2xl font-bold dark:text-gray-100 mb-6">
-              Log Workout: {workout.name}
-            </h2>
+    <div className="fixed inset-0 dark:bg-gray-800 bg-opacity-75 flex items-center justify-center p-4">
+      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 ai-style-change-1 dark:bg-gray-700 dark:text-gray-300 dark:shadow-gray-900">
+        <h2 className="text-2xl font-bold dark:text-gray-100 mb-6">
+          Log Workout: {workout.name}
+        </h2>
 
         <div className="space-y-6">
           {workout.workout_exercises?.map((exercise, exerciseIndex) => (
@@ -481,14 +615,16 @@ const handleSubmit = async () => {
             <button
               onClick={handleCancel}
               className="px-4 py-2 text-sm font-medium dark:text-gray-300 hover:text-gray-500"
+              disabled={saving}
             >
               Cancel
             </button>
             <button
               onClick={handleSubmit}
               className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-md"
+              disabled={saving}
             >
-              {isCompleted ? 'Update Workout' : 'Complete Workout'}
+              {saving ? 'Saving...' : isCompleted ? 'Update Workout' : 'Complete Workout'}
             </button>
           </div>
         </div>
