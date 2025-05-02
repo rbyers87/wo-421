@@ -6,4 +6,4 @@ scores can now be updated 5/2/25
 
 disabled Eruda in index.html with //
 
-Manifest.json controls the app name
+site.webmanifest was moved to root to replace the manifest.json
