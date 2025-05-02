@@ -350,15 +350,16 @@ export function WorkoutLogger({ workout, onClose, previousLogs, workoutLogId: in
         });
       });
 
-      // Upsert exercise scores
-      const { error: upsertError } = await supabase
-        .from('exercise_scores')
-        .upsert(exerciseScoresToUpsert, { onConflict: 'id' });
+// Upsert exercise scores
+const { error: upsertError } = await supabase
+  .from('exercise_scores')
+  .upsert(exerciseScoresToUpsert, { onConflict: 'id' });
 
-      if (upsertError) {
-        console.error('Error upserting exercise scores:', upsertError);
-        throw upsertError;
-      }
+if (upsertError) {
+  console.error('Error upserting exercise scores:', upsertError);
+  throw upsertError;
+}
+
 
       // Handle deleted sets
       if (currentWorkoutLogId) {
