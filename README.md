@@ -6,4 +6,4 @@ scores can now be updated 5/2/25
 
 disabled Eruda in index.html with //
 
-working on getting the favicon to work
+Manifest.json controls the app name
