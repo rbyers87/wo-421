@@ -7,3 +7,5 @@ scores can now be updated 5/2/25
 disabled Eruda in index.html with //
 
 site.webmanifest was moved to root to replace the manifest.json
+
+for favicons the src has to be specific to the location of the images
