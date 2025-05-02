@@ -1,6 +1,6 @@
 {
-  "name": "RyBy Tracker",
-  "short_name": "RyBy",
+  "name": "Monkey Lifts",
+  "short_name": "ML",
   "description": "Track your workouts and fitness progress",
   "start_url": "/",
   "display": "standalone",
