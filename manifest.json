@@ -1,6 +1,6 @@
 {
   "name": "RyBy Tracker",
-  "short_name": "wo-42",
+  "short_name": "RyBy",
   "description": "Track your workouts and fitness progress",
   "start_url": "/",
   "display": "standalone",
