@@ -4,11 +4,9 @@ import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import type { WorkoutLog } from '../../types/workout';
 
-interface RecentWorkoutsProps {
-  onWorkoutComplete?: () => void;
-}
+interface RecentWorkoutsProps {}
 
-export function RecentWorkouts({ onWorkoutComplete }: RecentWorkoutsProps) {
+export function RecentWorkouts({}: RecentWorkoutsProps) {
   const { user } = useAuth();
   const [recentWorkouts, setRecentWorkouts] = useState<WorkoutLog[]>([]);
   const [loading, setLoading] = useState(true);
@@ -43,27 +41,31 @@ export function RecentWorkouts({ onWorkoutComplete }: RecentWorkoutsProps) {
     }
 
     fetchRecentWorkouts();
-  }, [user, onWorkoutComplete]);
+  }, [user]);
 
   return (
     <div className="bg-white dark:bg-darkBackground dark:text-gray-100 dark:text-gray-200 rounded-lg shadow-md p-6 transition-all duration-300">
       <h2 className="text-2xl font-bold dark:text-gray-100 mb-4">Recent Workouts (Last 7 Days)</h2>
-      
-      <div className="space-y-4">
-        {recentWorkouts.map((log) => (
-          <div key={log.id} className="flex items-center justify-between">
-            <div>
-              <p className="font-medium dark:text-gray-100">{log.workout.name}</p>
-              <p className="text-sm dark:text-gray-300">
-                {format(new Date(log.completed_at), 'PPP')}
-              </p>
+
+      {loading ? (
+        <p className="text-gray-500 dark:text-gray-400">Loading...</p>
+      ) : recentWorkouts.length === 0 ? (
+        <p className="text-gray-500 dark:text-gray-400">No workouts found.</p>
+      ) : (
+        <div className="space-y-4">
+          {recentWorkouts.map((log) => (
+            <div key={log.id} className="flex items-center justify-between">
+              <div>
+                <p className="font-medium dark:text-gray-100">{log.workout.name}</p>
+                <p className="text-sm dark:text-gray-300">
+                  {format(new Date(log.completed_at), 'PPP')}
+                </p>
+              </div>
+              <span className="text-indigo-600 font-medium">Score: {log.total}</span>
             </div>
-            <span className="text-indigo-600 font-medium">
-              Score: {log.total}
-            </span>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
