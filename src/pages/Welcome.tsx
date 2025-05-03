@@ -39,7 +39,7 @@ import React, { useState, useEffect } from 'react';
     
       return (
         <div className="text-center flex flex-col items-center">
-          <h1 className="text-4xl font-bold dark:text-gray-100 mb-4">Welcome to Workout Tracker</h1>
+          <h1 className="text-4xl font-bold dark:text-gray-100 mb-4">Welcome to Primal Lifts</h1>
           <p className="text-lg dark:text-gray-300 mb-8">
             Workouts are scored by adding total weight moved and calories together for a total score!
           </p>
