@@ -13,8 +13,8 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,svg,png,ico,txt}']
       },
       manifest: {
-        name: 'Workout Tracker',
-        short_name: 'Workout',
+        name: 'Primal Lifts',
+        short_name: 'PLs',
         description: 'Your workout tracking application',
         theme_color: '#ffffff',
         background_color: '#ffffff',
