@@ -41,9 +41,7 @@ import React, { useState, useEffect } from 'react';
         <div className="text-center flex flex-col items-center">
           <h1 className="text-4xl font-bold dark:text-gray-100 mb-4">Welcome to Primal Lifts</h1>
           <p className="text-lg dark:text-gray-300 mb-8">
-            Workouts are scored by adding total weight moved and calories together for a total score!</p>
-
-<p Create custom workouts from the settings page and set what you want tk be tracked weekly.
+            Workouts are scored by adding total weight moved and calories together for a total score! Create custom workouts from the settings page and set what you want tk be tracked weekly.
           </p>
           {!loading && (
             <img
