@@ -1,6 +1,6 @@
 {
-  "name": "Workout Tracker",
-  "short_name": "WO-4",
+  "name": "Primal Lifts",
+  "short_name": "PLs",
   "description": "Track your workouts and fitness progress",
   "start_url": "/",
   "display": "standalone",
