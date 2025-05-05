@@ -10,19 +10,19 @@ interface WeeklyExercise {
   name: string;
 }
 
-interface ScheduledExercise {
+interface CompletedExercise {
   exercise_id: string;
-  scheduled_date: string;
+  completed_at: string;
 }
 
 interface WeeklyExercisesProps {
-  scheduledExercises?: ScheduledExercise[];
+  completedExercises?: CompletedExercise[];
 }
 
-export function WeeklyExercises({ scheduledExercises: initialScheduledExercises }: WeeklyExercisesProps) {
+export function WeeklyExercises({ completedExercises: initialCompletedExercises }: WeeklyExercisesProps) {
   const { user } = useAuth();
   const [exercises, setExercises] = useState<WeeklyExercise[]>([]);
-  const [scheduledExercises, setScheduledExercises] = useState<ScheduledExercise[]>(initialScheduledExercises || []);
+  const [completedExercises, setCompletedExercises] = useState<CompletedExercise[]>(initialCompletedExercises || []);
   const [loading, setLoading] = useState(true);
   const [currentWeekStart, setCurrentWeekStart] = useState(startOfWeek(new Date(), { weekStartsOn: 1 }));
 
@@ -43,35 +43,36 @@ export function WeeklyExercises({ scheduledExercises: initialScheduledExercises 
           const weekStart = format(currentWeekStart, 'yyyy-MM-dd');
           const weekEnd = format(endOfWeek(currentWeekStart, { weekStartsOn: 1 }), 'yyyy-MM-dd');
           
-          console.log('Fetching scheduled exercises between:', weekStart, 'and', weekEnd);
+          console.log('Fetching completed exercises between:', weekStart, 'and', weekEnd);
 
-          // Modified query to get exercises from workouts table using scheduled_date
-          const { data: scheduledData, error: scheduledError } = await supabase
-            .from('workouts')
+          // Modified query to directly get exercise IDs
+          const { data: completedData, error: completedError } = await supabase
+            .from('workout_logs')
             .select(`
-              id,
-              scheduled_date,
-              workout_exercises (
-                exercise_id
+              completed_at,
+              workout:workouts!inner (
+                workout_exercises!inner (
+                  exercise_id
+                )
               )
             `)
             .eq('user_id', user.id)
-            .gte('scheduled_date', `${weekStart}`)
-            .lte('scheduled_date', `${weekEnd}`);
+            .gte('completed_at', `${weekStart}T00:00:00`)
+            .lte('completed_at', `${weekEnd}T23:59:59`);
 
-          if (scheduledError) throw scheduledError;
+          if (completedError) throw completedError;
 
-          console.log('Scheduled Data:', scheduledData); // Debug log
+          console.log('Completed Data:', completedData); // Debug log
 
-          const formattedScheduledExercises = scheduledData?.flatMap(workout =>
-            workout.workout_exercises.map(ex => ({
+          const formattedCompletedExercises = completedData?.flatMap(log =>
+            log.workout.workout_exercises.map(ex => ({
               exercise_id: ex.exercise_id,
-              scheduled_date: workout.scheduled_date,
+              completed_at: log.completed_at,
             }))
           ) || [];
 
-          console.log('Formatted Scheduled Exercises:', formattedScheduledExercises); // Debug log
-          setScheduledExercises(formattedScheduledExercises);
+          console.log('Formatted Exercises:', formattedCompletedExercises); // Debug log
+          setCompletedExercises(formattedCompletedExercises);
         }
       } catch (error) {
         console.error('Error fetching weekly exercises:', error);
@@ -84,10 +85,10 @@ export function WeeklyExercises({ scheduledExercises: initialScheduledExercises 
   }, [user, currentWeekStart]);
 
   useEffect(() => {
-    if (initialScheduledExercises) {
-      setScheduledExercises(initialScheduledExercises);
+    if (initialCompletedExercises) {
+      setCompletedExercises(initialCompletedExercises);
     }
-  }, [initialScheduledExercises]);
+  }, [initialCompletedExercises]);
 
   const handlePrevWeek = () => {
     setCurrentWeekStart(addWeeks(currentWeekStart, -1));
@@ -97,7 +98,7 @@ export function WeeklyExercises({ scheduledExercises: initialScheduledExercises 
     setCurrentWeekStart(addWeeks(currentWeekStart, 1));
   };
 
-  const isExerciseScheduled = (exerciseId: string) => {
+  const isExerciseCompleted = (exerciseId: string) => {
     // Create start and end dates for the current week, normalizing time boundaries
     const weekStart = setHours(setMinutes(setSeconds(setMilliseconds(currentWeekStart, 0), 0), 0), 0);
     const weekEnd = setHours(setMinutes(setSeconds(setMilliseconds(
@@ -106,19 +107,19 @@ export function WeeklyExercises({ scheduledExercises: initialScheduledExercises 
     // Debug log for week boundaries
     console.log('Checking exercise', exerciseId, 'within interval:', format(weekStart, 'yyyy-MM-dd HH:mm:ss'), 'to', format(weekEnd, 'yyyy-MM-dd HH:mm:ss'));
     
-    return scheduledExercises.some(scheduled => {
-      const scheduledDate = parseISO(scheduled.scheduled_date);
+    return completedExercises.some(completed => {
+      const completedDate = parseISO(completed.completed_at);
       
       // Debug log for each comparison
       console.log(
         'Exercise:', exerciseId, 
-        'Scheduled:', scheduled.exercise_id, 
-        'Date:', format(scheduledDate, 'yyyy-MM-dd HH:mm:ss'),
-        'In range?', isWithinInterval(scheduledDate, { start: weekStart, end: weekEnd })
+        'Completed:', completed.exercise_id, 
+        'Date:', format(completedDate, 'yyyy-MM-dd HH:mm:ss'),
+        'In range?', isWithinInterval(completedDate, { start: weekStart, end: weekEnd })
       );
       
-      return scheduled.exercise_id === exerciseId && 
-             isWithinInterval(scheduledDate, { start: weekStart, end: weekEnd });
+      return completed.exercise_id === exerciseId && 
+             isWithinInterval(completedDate, { start: weekStart, end: weekEnd });
     });
   };
 
@@ -153,7 +154,7 @@ export function WeeklyExercises({ scheduledExercises: initialScheduledExercises 
         {exercises.map((exercise) => (
           <li key={exercise.id} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-700 rounded-lg">
             <span className="dark:text-white">{exercise.name}</span>
-            {isExerciseScheduled(exercise.id) ? (
+            {isExerciseCompleted(exercise.id) ? (
               <CheckCircle className="h-5 w-5 text-green-500" />
             ) : (
               <Circle className="h-5 w-5 text-gray-400" />
