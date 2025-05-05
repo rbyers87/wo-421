@@ -40,9 +40,12 @@ import React, { useState, useEffect } from 'react';
       return (
         <div className="text-center flex flex-col items-center">
           <h1 className="text-4xl font-bold dark:text-gray-100 mb-4">Welcome to Primal Lifts</h1>
-          <p className="text-lg dark:text-gray-300 mb-8">
-            Workouts are scored by adding total weight moved and calories together for a total score! Create custom workouts from the settings page and set what you want tk be tracked weekly.
-          </p>
+<p className="text-lg dark:text-gray-300 mb-8">
+  Workouts are scored by adding total weight moved and calories together for a total score! This app was built for those with a busy schedule and may need help keeping up with  exercises you've completed and what you have left with weekly tracking.
+</p>
+<p className="text-lg dark:text-gray-300 mb-8">
+  This app allows you to focus on the basic lifts but you can customize them in the settings menu.
+</p>
           {!loading && (
             <img
               src={imageUrl}
