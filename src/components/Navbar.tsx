@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Dumbbell, User, Settings, Trophy, LogOut, Calendar } from 'lucide-react';
+import { Dumbbell, User, Settings, Trophy, LogOut, Calendar, NotebookPen } from 'lucide-react';
 
 export default function Navbar() {
   const { user, signOut } = useAuth();
@@ -38,7 +38,7 @@ export default function Navbar() {
               to="/workouts"
               className="dark:text-gray-300 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium dark:text-gray-300 dark:hover:text-indigo-400"
             >
-              <Dumbbell className="h-5 w-5" />
+              <NotebookPen className="h-5 w-5" />
             </Link>
             <Link
               to="/leaderboard"
