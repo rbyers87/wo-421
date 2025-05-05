@@ -23,8 +23,8 @@ export default function Navbar() {
       <div className="container mx-auto px-4 bg-transparent">
         <div className="flex justify-between items-center h-16">
           <Link to="/" className="flex items-center space-x-2">
-            <Dumbbell className="h-8 w-8 text-indigo-600" />
-            <span className="text-xl font-bold text-gray-800 dark:text-white">Home</span>
+           // <Dumbbell className="h-8 w-8 text-indigo-600" />
+            <span className="text-xl font-bold text-gray-800 dark:text-white">Welcome</span>
           </Link>
 
           <div className="flex items-center space-x-4">
