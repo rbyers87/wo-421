@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Dumbbell, User, Settings, Trophy, LogOut, Calendar, NotebookPen, House } from 'lucide-react';
+import { Dumbbell, User, Settings, Trophy, LogOut, Calendar, NotebookPen, Home } from 'lucide-react';
 
 export default function Navbar() {
   const { user, signOut } = useAuth();
@@ -23,7 +23,7 @@ export default function Navbar() {
       <div className="container mx-auto px-4 bg-transparent">
         <div className="flex justify-between items-center h-16">
           <Link to="/" className="flex items-center space-x-2">             
-            <House className="h-8 w-8 text-indigo-600" />
+            <Home className="h-8 w-8 text-indigo-600" />
             <span className="text-xl font-bold text-gray-800 dark:text-white">Welcome</span>
           </Link>
 
