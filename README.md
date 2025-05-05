@@ -12,7 +12,7 @@ for favicons the src has to be specific to the location of the images
 
 5/5/2025 fixed workout on Sunday not showing in weekly checklist
 
-NavBar.tsx removed from line 26
+NavBar.tsx removed dumbbell from line 26
             /*
             <Dumbbell className="h-8 w-8 text-indigo-600" />
             */
