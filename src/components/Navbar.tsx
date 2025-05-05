@@ -32,7 +32,7 @@ export default function Navbar() {
               to="/wod"
               className="dark:text-gray-300 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium dark:text-gray-300 dark:hover:text-indigo-400"
             >
-              WOD
+              <Dumbbell className="h-5 w-5" />
             </Link>
             <Link
               to="/workouts"
