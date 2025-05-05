@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
-import { format, startOfWeek, endOfWeek, addWeeks, isWithinInterval } from 'date-fns';
+import { format, startOfWeek, endOfWeek, addWeeks, isWithinInterval, parseISO, setHours, setMinutes, setSeconds, setMilliseconds } from 'date-fns';
 import { CheckCircle, Circle } from 'lucide-react';
 import { LoadingSpinner } from '../common/LoadingSpinner';
 
@@ -39,8 +39,11 @@ export function WeeklyExercises({ completedExercises: initialCompletedExercises 
         setExercises(exercisesData || []);
 
         if (user) {
+          // Get normalized date strings for comparison
           const weekStart = format(currentWeekStart, 'yyyy-MM-dd');
           const weekEnd = format(endOfWeek(currentWeekStart, { weekStartsOn: 1 }), 'yyyy-MM-dd');
+          
+          console.log('Fetching completed exercises between:', weekStart, 'and', weekEnd);
 
           // Modified query to directly get exercise IDs
           const { data: completedData, error: completedError } = await supabase
@@ -54,8 +57,8 @@ export function WeeklyExercises({ completedExercises: initialCompletedExercises 
               )
             `)
             .eq('user_id', user.id)
-            .gte('completed_at', weekStart)
-            .lte('completed_at', weekEnd);
+            .gte('completed_at', `${weekStart}T00:00:00`)
+            .lte('completed_at', `${weekEnd}T23:59:59`);
 
           if (completedError) throw completedError;
 
@@ -96,40 +99,50 @@ export function WeeklyExercises({ completedExercises: initialCompletedExercises 
   };
 
   const isExerciseCompleted = (exerciseId: string) => {
-    const weekEnd = endOfWeek(currentWeekStart, { weekStartsOn: 1 });
+    // Create start and end dates for the current week, normalizing time boundaries
+    const weekStart = setHours(setMinutes(setSeconds(setMilliseconds(currentWeekStart, 0), 0), 0), 0);
+    const weekEnd = setHours(setMinutes(setSeconds(setMilliseconds(
+      endOfWeek(currentWeekStart, { weekStartsOn: 1 }), 999), 59), 23), 23);
     
-    return completedExercises.some(
-      (completed) => {
-        const completedDate = new Date(completed.completed_at);
-        return completed.exercise_id === exerciseId &&
-          isWithinInterval(completedDate, {
-            start: currentWeekStart,
-            end: weekEnd
-          });
-      }
-    );
+    // Debug log for week boundaries
+    console.log('Checking exercise', exerciseId, 'within interval:', format(weekStart, 'yyyy-MM-dd HH:mm:ss'), 'to', format(weekEnd, 'yyyy-MM-dd HH:mm:ss'));
+    
+    return completedExercises.some(completed => {
+      const completedDate = parseISO(completed.completed_at);
+      
+      // Debug log for each comparison
+      console.log(
+        'Exercise:', exerciseId, 
+        'Completed:', completed.exercise_id, 
+        'Date:', format(completedDate, 'yyyy-MM-dd HH:mm:ss'),
+        'In range?', isWithinInterval(completedDate, { start: weekStart, end: weekEnd })
+      );
+      
+      return completed.exercise_id === exerciseId && 
+             isWithinInterval(completedDate, { start: weekStart, end: weekEnd });
+    });
   };
 
   if (loading) return <LoadingSpinner />;
 
   return (
-    <div className="bg-white dark:bg-darkBackground dark:text-gray-100 dark:text-gray-200 rounded-lg shadow-md p-6 transition-all duration-300 dark:bg-gray-800">
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 transition-all duration-300">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-bold dark:text-gray-100 dark:text-white">Weekly Exercises</h2>
+        <h2 className="text-xl font-bold dark:text-white">Weekly Exercises</h2>
         <div className="flex items-center space-x-2">
           <button
             onClick={handlePrevWeek}
-            className="p-2 hover:dark:bg-gray-700 dark:hover:bg-gray-700 rounded-full"
+            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full"
             aria-label="Previous week"
           >
             &lt;
           </button>
-          <span className="text-sm dark:text-gray-300 dark:text-gray-300">
+          <span className="text-sm dark:text-gray-300">
             {format(currentWeekStart, 'MMM d')} - {format(endOfWeek(currentWeekStart, { weekStartsOn: 1 }), 'MMM d')}
           </span>
           <button
             onClick={handleNextWeek}
-            className="p-2 hover:dark:bg-gray-700 dark:hover:bg-gray-700 rounded-full"
+            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full"
             aria-label="Next week"
           >
             &gt;
@@ -139,8 +152,8 @@ export function WeeklyExercises({ completedExercises: initialCompletedExercises 
 
       <ul className="space-y-2">
         {exercises.map((exercise) => (
-          <li key={exercise.id} className="flex items-center justify-between p-2 dark:bg-gray-800 dark:bg-gray-700 rounded-lg">
-            <span className="dark:text-gray-100 dark:text-white">{exercise.name}</span>
+          <li key={exercise.id} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-700 rounded-lg">
+            <span className="dark:text-white">{exercise.name}</span>
             {isExerciseCompleted(exercise.id) ? (
               <CheckCircle className="h-5 w-5 text-green-500" />
             ) : (
